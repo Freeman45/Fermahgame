@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK Proof Matchmaker | Fermah Game</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        #root {
+            width: 100%;
+            max-width: 1400px;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #a0aec0;
+            margin-bottom: 5px;
+        }
+
+        .tagline {
+            font-size: 14px;
+            color: #718096;
+            font-style: italic;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 20px 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #a0aec0;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+            min-height: 500px;
+        }
+
+        .column {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .column-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #e2e8f0;
+        }
+
+        .card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.6);
+        }
+
+        .card.selected {
+            border-color: #f093fb;
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.3) 0%, rgba(102, 126, 234, 0.3) 100%);
+            box-shadow: 0 0 24px rgba(240, 147, 251, 0.5);
+        }
+
+        .card.matched {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #48bb78;
+            background: linear-gradient(135deg, rgba(72, 187, 120, 0.2) 0%, rgba(56, 161, 105, 0.2) 100%);
+        }
+
+        .card-type {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+        }
+
+        .card-specs {
+            font-size: 14px;
+            color: #cbd5e0;
+            margin-bottom: 4px;
+        }
+
+        .match-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .match-slot {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .match-slot.has-selection {
+            border-color: #f093fb;
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.1) 0%, rgba(102, 126, 234, 0.1) 100%);
+        }
+
+        .match-slot.correct {
+            border-color: #48bb78;
+            background: linear-gradient(135deg, rgba(72, 187, 120, 0.2) 0%, rgba(56, 161, 105, 0.2) 100%);
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .match-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .match-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .match-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.4);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 100%);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-text {
+            font-size: 18px;
+            color: #cbd5e0;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .intro-text {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .intro-text h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .intro-text p {
+            color: #cbd5e0;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .intro-text ul {
+            margin-left: 20px;
+            color: #cbd5e0;
+            margin-bottom: 15px;
+        }
+
+        .intro-text li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 968px) {
+            .game-board {
+                grid-template-columns: 1fr;
+            }
+            
+            .game-container {
+                padding: 20px;
+            }
+            
+            .logo {
+                font-size: 32px;
+            }
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #f093fb;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #f093fb 100%);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const PROOF_TYPES = [
+            { id: 1, name: 'zkRollup Batch', type: 'ZK Rollup', complexity: 'High', requirements: 'High-end GPU' },
+            { id: 2, name: 'zkBridge Transaction', type: 'ZK Bridge', complexity: 'Medium', requirements: 'Mid-range GPU' },
+            { id: 3, name: 'zkML Inference', type: 'ZKML', complexity: 'High', requirements: 'High-end GPU' },
+            { id: 4, name: 'zkEVM State Proof', type: 'zkEVM', complexity: 'Very High', requirements: 'FPGA' },
+            { id: 5, name: 'Groth16 Verification', type: 'Groth16', complexity: 'Low', requirements: 'Standard GPU' },
+            { id: 6, name: 'zkCoprocessor Query', type: 'zkCoprocessor', complexity: 'Medium', requirements: 'Mid-range GPU' },
+        ];
+
+        const COMPUTE_RESOURCES = [
+            { id: 1, name: 'NVIDIA A100', type: 'High-end GPU', performance: '95 TFLOPs', category: 'High-end GPU' },
+            { id: 2, name: 'NVIDIA RTX 4090', type: 'Mid-range GPU', performance: '82 TFLOPs', category: 'Mid-range GPU' },
+            { id: 3, name: 'AMD MI250X', type: 'High-end GPU', performance: '90 TFLOPs', category: 'High-end GPU' },
+            { id: 4, name: 'Intel Stratix 10', type: 'FPGA', performance: 'Custom Logic', category: 'FPGA' },
+            { id: 5, name: 'NVIDIA RTX 3080', type: 'Standard GPU', performance: '29 TFLOPs', category: 'Standard GPU' },
+            { id: 6, name: 'AMD RX 7900 XTX', type: 'Mid-range GPU', performance: '61 TFLOPs', category: 'Mid-range GPU' },
+        ];
+
+        const CORRECT_MATCHES = {
+            1: [1, 3], // zkRollup -> High-end GPUs
+            2: [2, 6], // zkBridge -> Mid-range GPUs
+            3: [1, 3], // zkML -> High-end GPUs
+            4: [4],    // zkEVM -> FPGA
+            5: [5],    // Groth16 -> Standard GPU
+            6: [2, 6], // zkCoprocessor -> Mid-range GPUs
+        };
+
+        function FermahGame() {
+            const [gameState, setGameState] = useState('intro');
+            const [level, setLevel] = useState(1);
+            const [score, setScore] = useState(0);
+            const [matches, setMatches] = useState(0);
+            const [selectedProof, setSelectedProof] = useState(null);
+            const [selectedResource, setSelectedResource] = useState(null);
+            const [matchedPairs, setMatchedPairs] = useState([]);
+            const [timeLeft, setTimeLeft] = useState(90);
+            const [streak, setStreak] = useState(0);
+
+            useEffect(() => {
+                if (gameState === 'playing' && timeLeft > 0) {
+                    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+                    return () => clearTimeout(timer);
+                } else if (timeLeft === 0 && gameState === 'playing') {
+                    endGame();
+                }
+            }, [timeLeft, gameState]);
+
+            const startGame = () => {
+                setGameState('playing');
+                setLevel(1);
+                setScore(0);
+                setMatches(0);
+                setMatchedPairs([]);
+                setSelectedProof(null);
+                setSelectedResource(null);
+                setTimeLeft(90);
+                setStreak(0);
+            };
+
+            const selectProof = (proof) => {
+                if (matchedPairs.includes(proof.id)) return;
+                setSelectedProof(proof);
+            };
+
+            const selectResource = (resource) => {
+                if (matchedPairs.some(pair => pair.resourceId === resource.id)) return;
+                setSelectedResource(resource);
+            };
+
+            const attemptMatch = () => {
+                if (!selectedProof || !selectedResource) return;
+
+                const isCorrect = CORRECT_MATCHES[selectedProof.id].includes(selectedResource.id);
+                
+                if (isCorrect) {
+                    const matchScore = 100 * level * (1 + streak * 0.2);
+                    setScore(score + matchScore);
+                    setMatches(matches + 1);
+                    setStreak(streak + 1);
+                    setMatchedPairs([...matchedPairs, { proofId: selectedProof.id, resourceId: selectedResource.id }]);
+                    
+                    // Check if level complete
+                    if (matches + 1 >= 3) {
+                        levelUp();
+                    }
+                } else {
+                    setStreak(0);
+                    setScore(Math.max(0, score - 50));
+                }
+
+                setSelectedProof(null);
+                setSelectedResource(null);
+            };
+
+            const levelUp = () => {
+                setLevel(level + 1);
+                setMatches(0);
+                setMatchedPairs([]);
+                setTimeLeft(timeLeft + 30);
+            };
+
+            const endGame = () => {
+                setGameState('gameover');
+            };
+
+            const restartGame = () => {
+                startGame();
+            };
+
+            const getAvailableProofs = () => {
+                return PROOF_TYPES.filter(proof => 
+                    !matchedPairs.some(pair => pair.proofId === proof.id)
+                ).slice(0, 3);
+            };
+
+            const getAvailableResources = () => {
+                return COMPUTE_RESOURCES.filter(resource => 
+                    !matchedPairs.some(pair => pair.resourceId === resource.id)
+                ).slice(0, 3);
+            };
+
+            if (gameState === 'intro') {
+                return (
+                    <div className="modal">
+                        <div className="modal-content">
+                            <div className="logo">⚡ FERMAH</div>
+                            <div className="modal-title">ZK Proof Matchmaker</div>
+                            <div className="intro-text">
+                                <h3>🎯 Your Mission</h3>
+                                <p>Welcome to the Fermah Universal Proof Market! As a matchmaker, your job is to connect Zero-Knowledge proof requests with the right computational resources.</p>
+                                
+                                <h3>🎮 How to Play</h3>
+                                <ul>
+                                    <li>Select a <strong>ZK Proof Request</strong> from the left</li>
+                                    <li>Select a <strong>Compute Resource</strong> from the right</li>
+                                    <li>Click <strong>"Generate Proof!"</strong> to attempt the match</li>
+                                    <li>Match the proof type with the correct hardware!</li>
+                                </ul>
+
+                                <h3>💡 Tips</h3>
+                                <p><strong>High Complexity</strong> proofs need <strong>High-end GPUs or FPGAs</strong><br/>
+                                <strong>Medium Complexity</strong> proofs work with <strong>Mid-range GPUs</strong><br/>
+                                <strong>Low Complexity</strong> proofs can use <strong>Standard GPUs</strong></p>
+                                
+                                <p style="margin-top: 20px; font-size: 14px; color: #a0aec0;">
+                                    🌙 Bringing Moon Math to the Masses 🌙
+                                </p>
+                            </div>
+                            <button className="btn" onClick={startGame}>
+                                Start Proving! 🚀
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (gameState === 'gameover') {
+                return (
+                    <div className="modal">
+                        <div className="modal-content">
+                            <div className="modal-title">Game Over!</div>
+                            <div className="modal-text">
+                                <p style={{ fontSize: '24px', marginBottom: '20px' }}>
+                                    Final Score: <strong>{score}</strong>
+                                </p>
+                                <p style={{ fontSize: '18px', marginBottom: '10px' }}>
+                                    Level Reached: <strong>{level}</strong>
+                                </p>
+                                <p style={{ fontSize: '18px', marginBottom: '30px' }}>
+                                    Total Proofs Generated: <strong>{matches}</strong>
+                                </p>
+                                <p style={{ fontSize: '14px', color: '#a0aec0' }}>
+                                    You've helped make ZK proofs more accessible!<br/>
+                                    Keep building with Fermah 🌙
+                                </p>
+                            </div>
+                            <button className="btn" onClick={restartGame}>
+                                Play Again 🔄
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="game-container">
+                    <div className="header">
+                        <div className="logo">⚡ FERMAH</div>
+                        <div className="subtitle">ZK Proof Matchmaker</div>
+                        <div className="tagline">Bringing Moon Math to the Masses</div>
+                    </div>
+
+                    <div className="game-stats">
+                        <div className="stat-card">
+                            <div className="stat-label">Score</div>
+                            <div className="stat-value">{score}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Level</div>
+                            <div className="stat-value">{level}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Proofs</div>
+                            <div className="stat-value">{matches}/3</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Streak</div>
+                            <div className="stat-value">{streak}🔥</div>
+                        </div>
+                    </div>
+
+                    <div className="timer">⏱ Time: {timeLeft}s</div>
+                    <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: `${(matches / 3) * 100}%` }}></div>
+                    </div>
+
+                    <div className="game-board">
+                        <div className="column">
+                            <div className="column-title">🔐 Proof Requests</div>
+                            {getAvailableProofs().map(proof => (
+                                <div
+                                    key={proof.id}
+                                    className={`card ${selectedProof?.id === proof.id ? 'selected' : ''} ${matchedPairs.some(p => p.proofId === proof.id) ? 'matched' : ''}`}
+                                    onClick={() => selectProof(proof)}
+                                >
+                                    <div className="card-type">{proof.type}</div>
+                                    <div className="card-name">{proof.name}</div>
+                                    <div className="card-specs">Complexity: {proof.complexity}</div>
+                                    <div className="card-specs">Needs: {proof.requirements}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="column">
+                            <div className="column-title">⚡ Matchmaker</div>
+                            <div className="match-area">
+                                <div className={`match-slot ${selectedProof ? 'has-selection' : ''}`}>
+                                    {selectedProof ? (
+                                        <>
+                                            <div style={{ fontSize: '14px', color: '#a0aec0', marginBottom: '5px' }}>Selected Proof:</div>
+                                            <div style={{ fontSize: '18px', fontWeight: '600' }}>{selectedProof.name}</div>
+                                        </>
+                                    ) : (
+                                        <div style={{ color: '#718096' }}>Select a proof request →</div>
+                                    )}
+                                </div>
+
+                                <div style={{ textAlign: 'center', fontSize: '32px' }}>⚙️</div>
+
+                                <div className={`match-slot ${selectedResource ? 'has-selection' : ''}`}>
+                                    {selectedResource ? (
+                                        <>
+                                            <div style={{ fontSize: '14px', color: '#a0aec0', marginBottom: '5px' }}>Selected Resource:</div>
+                                            <div style={{ fontSize: '18px', fontWeight: '600' }}>{selectedResource.name}</div>
+                                        </>
+                                    ) : (
+                                        <div style={{ color: '#718096' }}>Select a compute resource →</div>
+                                    )}
+                                </div>
+
+                                <button
+                                    className="match-button"
+                                    onClick={attemptMatch}
+                                    disabled={!selectedProof || !selectedResource}
+                                >
+                                    🚀 Generate Proof!
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="column">
+                            <div className="column-title">💻 Compute Resources</div>
+                            {getAvailableResources().map(resource => (
+                                <div
+                                    key={resource.id}
+                                    className={`card ${selectedResource?.id === resource.id ? 'selected' : ''} ${matchedPairs.some(p => p.resourceId === resource.id) ? 'matched' : ''}`}
+                                    onClick={() => selectResource(resource)}
+                                >
+                                    <div className="card-type">{resource.type}</div>
+                                    <div className="card-name">{resource.name}</div>
+                                    <div className="card-specs">Performance: {resource.performance}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="controls">
+                        <button className="btn btn-secondary" onClick={restartGame}>
+                            🔄 Restart
+                        </button>
+                        <a href="https://fermah.xyz" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                            <button className="btn">
+                                Learn About Fermah 🌙
+                            </button>
+                        </a>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<FermahGame />, document.getElementById('root'));
+    </script>
+</body>
+</html>
