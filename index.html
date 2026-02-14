@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZK Proof Matchmaker | Fermah Game</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -251,6 +248,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn:hover {
@@ -368,10 +367,22 @@
             background: linear-gradient(90deg, #667eea 0%, #f093fb 100%);
             transition: width 0.3s ease;
         }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <div class="loading">Loading Fermah Game... ⚡</div>
+    </div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
@@ -395,12 +406,12 @@
         ];
 
         const CORRECT_MATCHES = {
-            1: [1, 3], // zkRollup -> High-end GPUs
-            2: [2, 6], // zkBridge -> Mid-range GPUs
-            3: [1, 3], // zkML -> High-end GPUs
-            4: [4],    // zkEVM -> FPGA
-            5: [5],    // Groth16 -> Standard GPU
-            6: [2, 6], // zkCoprocessor -> Mid-range GPUs
+            1: [1, 3],
+            2: [2, 6],
+            3: [1, 3],
+            4: [4],
+            5: [5],
+            6: [2, 6],
         };
 
         function FermahGame() {
@@ -436,7 +447,7 @@
             };
 
             const selectProof = (proof) => {
-                if (matchedPairs.includes(proof.id)) return;
+                if (matchedPairs.some(p => p.proofId === proof.id)) return;
                 setSelectedProof(proof);
             };
 
@@ -451,13 +462,12 @@
                 const isCorrect = CORRECT_MATCHES[selectedProof.id].includes(selectedResource.id);
                 
                 if (isCorrect) {
-                    const matchScore = 100 * level * (1 + streak * 0.2);
+                    const matchScore = Math.floor(100 * level * (1 + streak * 0.2));
                     setScore(score + matchScore);
                     setMatches(matches + 1);
                     setStreak(streak + 1);
                     setMatchedPairs([...matchedPairs, { proofId: selectedProof.id, resourceId: selectedResource.id }]);
                     
-                    // Check if level complete
                     if (matches + 1 >= 3) {
                         levelUp();
                     }
@@ -520,7 +530,7 @@
                                 <strong>Medium Complexity</strong> proofs work with <strong>Mid-range GPUs</strong><br/>
                                 <strong>Low Complexity</strong> proofs can use <strong>Standard GPUs</strong></p>
                                 
-                                <p style="margin-top: 20px; font-size: 14px; color: #a0aec0;">
+                                <p style={{marginTop: '20px', fontSize: '14px', color: '#a0aec0'}}>
                                     🌙 Bringing Moon Math to the Masses 🌙
                                 </p>
                             </div>
@@ -545,7 +555,7 @@
                                     Level Reached: <strong>{level}</strong>
                                 </p>
                                 <p style={{ fontSize: '18px', marginBottom: '30px' }}>
-                                    Total Proofs Generated: <strong>{matches}</strong>
+                                    Total Proofs Generated: <strong>{matchedPairs.length}</strong>
                                 </p>
                                 <p style={{ fontSize: '14px', color: '#a0aec0' }}>
                                     You've helped make ZK proofs more accessible!<br/>
@@ -666,17 +676,16 @@
                         <button className="btn btn-secondary" onClick={restartGame}>
                             🔄 Restart
                         </button>
-                        <a href="https://fermah.xyz" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                            <button className="btn">
-                                Learn About Fermah 🌙
-                            </button>
+                        <a href="https://fermah.xyz" target="_blank" rel="noopener noreferrer" className="btn">
+                            Learn About Fermah 🌙
                         </a>
                     </div>
                 </div>
             );
         }
 
-        ReactDOM.render(<FermahGame />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<FermahGame />);
     </script>
 </body>
 </html>
